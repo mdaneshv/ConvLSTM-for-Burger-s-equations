@@ -1,2 +1,2 @@
 # ConvLSTM-for-Burger-s-equations
-Forecasting of space discretization of Burger's euqation with ConvLSTM
+Data-driven prediction of inviscid Burger's euqation with ConvLSTM neural network
