@@ -1,219 +1,188 @@
 
-
-  
 import numpy as np
 from sklearn import preprocessing
+import pandas as pd
 import matplotlib.pyplot as plt
-from keras.models import Sequential
-from keras import optimizers
+from keras.models import Model, Sequential
+from keras.layers import GRU, LSTM, Dense, Input, Activation, Dropout
 from keras.layers.convolutional_recurrent import ConvLSTM2D
+from keras import optimizers
+from keras import backend as K
+import seaborn as sns
+import pandas.util.testing as tm
 
 
+# Original data
+Origin_data = np.genfromtxt('U16.dat', delimiter=' ')
 
-# def custom_activation(x):
-#     return(K.tanh(x)*-0.02)
-# 
-# get_custom_objects().update({'custom_activation':Activation(custom_activation)})    
+# Define encoder-decoder
+'''
+def encoder_decoder(data, code_size):
+  features = data.shape[1]
+  m = data.shape[0]
+
+  # normalize features to have zero mean and variance one
+  for i in range(features):
+        data[:, i] = preprocessing.scale(data[:, i])
 
 
-X= np.genfromtxt('Useries.dat', dtype = np.float64, delimiter=' ')
+  x_train = np.random.rand(m, features)  # deterministic values
+  x_train_noisy = x_train + np.random.normal(size=(m, features)) # noisy values
 
+  input_vector = Input(shape=(features,))
+  code = Dense(code_size, activation='tanh')(input_vector)
+  output = Dense(features, activation='tanh')(code)
 
+  autoencoder = Model(input_vector, output)
+  autoencoder.compile(optimizer='adam', loss='mse')
+  autoencoder.fit(x_train_noisy, x_train, epochs=1)
 
+  dataset = autoencoder.predict(data)  # denoise data
 
-
-def ConvLSTM_dataset(Origin_data, time_steps ,rows, columns):
+  return dataset
+'''
+# Create datasets for ConvLSTM2d
+def ConvLSTM_dataset(dataset, time_window, rows, columns):
+    features = dataset.shape[0] 
+    m = dataset.shape[1] 
+    samples = int(m / columns) - 1 # number of images 
+    test_size = 5                  # the true test size for images will become: test_size - time_window
+    train_size = samples - test_size
     
-    features=Origin_data.shape[0]
-    m=Origin_data.shape[1]
-    samples=int(m/columns)-1
-    train_size=samples-4000
-    test_size=4000
-    
-    for i in range (features):
 
-
-       Origin_data[i,:]=preprocessing.scale(Origin_data[i,:])
-    
-    
-    
-
-    Z=np.zeros((samples,rows,columns)) # transform original data into 2D images
-
+    # start converting dataset into 2D-images
+    Z = np.zeros((samples, rows, columns))  
     for i in range(samples):
-    
-        
-        Z[i,:,:]= Origin_data[:,i*columns:i*columns+columns]
-        
-    data = np.transpose(Z)    
+        Z[i, :, :] = dataset[:, i * columns:i * columns + columns] # We cut dataset into different parts: 2D-images
 
+    image_data = np.transpose(Z)
 
-    
-  
-    
-    Zcut = {} # Creating a seuqnce of data 
-    
-    for i in range(time_steps):    
-        Zcut[i] = data[:,:,i:samples-(time_steps-i-1)]
+    # Creating a sequence of data from 2D-images we have created above
+    Znew = {}  
+    for i in range(time_window):
+        Znew[i] = image_data[:, :, i:samples - (time_window - i - 1)]
 
-    Xnew = Zcut[0] 
-    for i in range(time_steps-1):
-        Xnew = np.vstack([Xnew,Zcut[i+1]])
+    X = Znew[0]
+    for i in range(time_window - 1):
+        X = np.vstack([X, Znew[i + 1]])
 
-    Xnew = np.transpose(Xnew)
-    Y = Z[time_steps:,:,:]
-    
-   
-    
+    X = np.transpose(X)
+    Y = Z[time_window:, :, :]  # target values for X
 
-    Xnew_train = Xnew[:train_size,:]    
-    Ynew_train = Y[:train_size,:]
-    Xnew_test = Xnew[train_size:train_size+test_size,:]
-    Xnew_test = np.delete(Xnew_test, (test_size-time_steps), axis=0)
-    Ynew_test = Y[train_size:train_size+test_size,:]
-    
-    
-    
+    # creating train and test sets and corresponding target values from X and Y
+    X_train = X[:train_size, :]
+    Y_train = Y[:train_size, :]
+    X_test = X[train_size:train_size + test_size, :]
+    X_test = np.delete(X_test, (test_size - time_window), axis=0)
+    Y_test = Y[train_size:train_size + test_size, :]
 
-    #reshape input and output to be fed into ConvLastm2D layers 
-    Xtrain_set = Xnew_train.reshape((Xnew_train.shape[0], time_steps,rows,columns,1))
-    Xtest_set = Xnew_test.reshape((Xnew_test.shape[0], time_steps,rows,columns,1))
-    Ytrain_set = Ynew_train.reshape((Ynew_train.shape[0],rows,columns,1))
-    Ytest_set = Ynew_test.reshape((Ynew_test.shape[0],rows,columns,1))
+    # reshape input and output to be fed into ConvLastm2D layers: input must be 5 dimensional 
+    Xtrain_set = X_train.reshape((X_train.shape[0], time_window, rows, columns, 1))
+    Xtest_set = X_test.reshape((X_test.shape[0], time_window, rows, columns, 1))
+    Ytrain_set = Y_train.reshape((Y_train.shape[0], rows, columns, 1))
+    Ytest_set = Y_test.reshape((Y_test.shape[0], rows, columns, 1))
 
+    return Xtrain_set, Ytrain_set, Xtest_set, Ytest_set
 
-    return Xtrain_set,Ytrain_set,Xtest_set,Ytest_set
+# Define ConvLSTM2D model
+def create_ConvLSTM_layers(X, Y, filters, kernel_size, batch_size, epochs, learning_rate):
+    time_window, rows, columns = np.shape(X)[1], np.shape(X)[2], np.shape(X)[3]
 
-
-
-
-def create_ConvLSTM_layers(X,Y,batch_size):
-    
-    time_steps,rows,columns=np.shape(X)[1],np.shape(X)[2],np.shape(X)[3]
-    
-    
     model = Sequential()
+
+    model.add(ConvLSTM2D(filters=filters, kernel_size=kernel_size,
+                         input_shape=(time_window, rows, columns, 1),
+                         padding='same', return_sequences=True))
     
-    model.add(ConvLSTM2D(filters=20, kernel_size=(20,3),
-                   input_shape=(time_steps, rows, columns,1),
-                   padding='same', return_sequences=True))
+    model.add(ConvLSTM2D(filters=filters, kernel_size=kernel_size,
+                         input_shape=(time_window, rows, columns, 1),
+                         padding='same', return_sequences=True))
+  
+    # last layer has 1 filter
+    model.add(ConvLSTM2D(filters=1, kernel_size=kernel_size,    
+                         input_shape=(time_window, rows, columns, 1),
+                         padding='same', data_format='channels_last'))
     
-    model.add(ConvLSTM2D(filters=20, kernel_size=(20, 3),
-                    input_shape=(time_steps, rows, columns,1),
-                   padding='same', return_sequences=True))
-     
-    model.add(ConvLSTM2D(filters=20, kernel_size=(20, 3),
-                    input_shape=(time_steps, rows, columns,1),
-                    padding='same', return_sequences=True))
-                          
-    model.add(ConvLSTM2D(filters=1, kernel_size=(20, 3),
-                    input_shape=(time_steps, rows, columns,1),
-                    padding='same', data_format='channels_last'))                      
+
+    adam = optimizers.Adam(lr=learning_rate, beta_1=0.99, beta_2=0.999)
+
+    model.compile(loss='mse', optimizer=adam #metrics=['accuracy'])
+
+    # fit model to the data
+    history = model.fit(X, Y, epochs=epochs, batch_size=batch_size, verbose=2, shuffle=True)
+
+    return model, history
 
 
-    
-    adam=optimizers.Adam(lr=0.003,beta_1=0.99, beta_2=0.999)
-    
-    model.compile(loss='mse', optimizer=adam, metrics=['accuracy'])
-    
-    
-    history = model.fit(X, Y, epochs=1, batch_size=batch_size, verbose=2, shuffle=True)
-    
-    return model,history
+# sequence to sequence predictions
+def prediction(model, X, time_window, rows, columns):  
 
+    time_window, rows, columns = np.shape(X)[1], np.shape(X)[2], np.shape(X)[3]
 
+    Predictions = np.zeros((X.shape[0], rows, columns, 1))
 
+    first_sequence = X[0, :, :, :, :].reshape((1, time_window, rows, columns, 1))
+    Predictions[0, :, :, :] = model.predict(first_sequence)
 
-def prediction(model,X,time_steps, rows, columns): # sequence to sequence predictions
-    
-    time_steps,rows,columns=np.shape(X)[1],np.shape(X)[2],np.shape(X)[3]
-    
-    
-    Predictions = np.zeros((X.shape[0],rows,columns,1))
-       
-    first_sequence = X[0,:,:,:,:].reshape((1,time_steps,rows,columns,1))
-    Predictions[0,:,:,:] = model.predict(first_sequence) 
-     
-    for i in range(1,X.shape[0]):        
-        if i < time_steps:
-            ith_sequence = X[i,:,:,:,:].reshape((1,time_steps,rows,columns,1))
-            ith_sequence[0,(time_steps-i):time_steps,:,:,:] = Predictions[:i,:,:,:]
-            Predictions[i,:,:,:] = model.predict(ith_sequence)
+    for i in range(1, X.shape[0]):
+        if i < time_window:
+            ith_sequence = X[i, :, :, :, :].reshape((1, time_window, rows, columns, 1))
+            ith_sequence[0, (time_window - i):time_window, :, :, :] = Predictions[:i, :, :, :]
+            Predictions[i, :, :, :] = model.predict(ith_sequence)
         else:
-            ith_sequence = Predictions[i-time_steps:i,:,:,:].reshape((1,time_steps,rows,columns,1))
-            Predictions[i,:,:,:] = model.predict(ith_sequence)
-           
+            ith_sequence = Predictions[i - time_window:i, :, :, :].reshape((1, time_window, rows, columns, 1))
+            Predictions[i, :, :, :] = model.predict(ith_sequence)
+
     return Predictions
 
+# Paste columns of Predictions and true values to create 2 vectors for plotting
+def make_plots(Predictions, Ytest_set, pred_steps):
+    Ypred = {}
+    Ytest = {}
+
+    for i in range(rows):
+        Ypred[i] = Predictions[0, i, :, 0]
+        Ytest[i] = Ytest_set[0, i, :, 0]
+        for j in range(0, pred_steps):
+            Ypred[i] = np.append(Ypred[i], Predictions[j, i, :, 0])
+            Ytest[i] = np.append(Ytest[i], Ytest_set[j, i, :, 0])
+
+    # plots  
+    for i in range(rows):
+        plot1, = plt.plot(Ytest[i])
+
+        plot2, = plt.plot(Ypred[i])
+
+        plt.xlabel('steps')
+
+        plt.ylabel('$X[%i]$' % i)
+
+        plt.title('Prediction for feature $%i$' % i, fontsize=10)
+
+        plt.legend([plot1, plot2], ["true_values", "prediction"])
+
+        plt.savefig('predction for %i' % i)
+
+        plt.show()
+
+    return Ypred, Ytest, plot1, plot2
 
 
+time_window = 2  # recurrent steps or tiem-steps
+rows = 16        # I chose it to be the same as number of features
+columns = 3      # columns of images 
+pred_steps = 3   # prediction horizon shown on x_axis of plots which is : pred_steps * columns 
+# pred_steps < test_seize - time_window
+filters = 30     # number of filters in convolutional layres
+kernel_size = (10,3)
+batch_size = 128
+epochs = 7
+learning_rate = 0.003
+code_size = 10   # number of hidden units in encoder-decoder
 
-def make_plots(Predictions,Ytest_set, pred_steps):
-   
-    
-   
-   Ypred={}
-   Ytest={}
-   for i in range(rows):
-     Ypred[i]=np.empty((1))
-     Ytest[i]=np.empty((1))
-   
-   for i in range(rows):
-       for j in range(0,pred_steps):
-    
-          Ypred[i]=np.append(Ypred[i],Predictions[j,i,:,0])
-          Ytest[i]=np.append(Ytest[i],Ytest_set[j,i,:,0])
-
-       Ypred[i] = np.delete(Ypred[i], 0, axis=0)
-       Ytest[i] = np.delete(Ytest[i], 0, axis=0)
-       
-   for i in range(rows):
- 
-    plot1,=plt.plot(Ytest[i])
-        
-    plot2,=plt.plot(Ypred[i])
-        
-    plt.xlabel('steps')
-        
-    plt.ylabel('$X[%i]$' %i)
-        
-    plt.title('Prediction for $X[%i]$' %i, fontsize=10)
-        
-    plt.legend([plot1,plot2],["true_values","prediction"])
-        
-    plt.savefig('predction for %i'%i)
-        
-    plt.show()
-    
-
-
-   return Ypred,Ytest,plot1,plot2
-
-
-time_steps=5
-rows=16
-columns=10
-batch_size=32
-pred_steps=10
-
-
-
-
-Xtrain_set,Ytrain_set,Xtest_set,Ytest_set = ConvLSTM_dataset(X, time_steps ,rows, columns)
-model,history = create_ConvLSTM_layers(Xtrain_set,Ytrain_set,batch_size)
-
-
-Predictions = prediction(model,Xtest_set,time_steps, rows, columns)
-
-Ypred,Ytest,plot1,plot2=make_plots(Predictions,Ytest_set,pred_steps)
-
-
-
-       
-
-
-
-
-
-
+#dataset = encoder_decoder(np.transpose(Origin_data), code_size)
+Xtrain_set, Ytrain_set, Xtest_set, Ytest_set = ConvLSTM_dataset(Origin_data, time_window, rows, columns)
+model, history = create_ConvLSTM_layers(Xtrain_set, Ytrain_set, filters, kernel_size, batch_size, epochs, learning_rate)
+Predictions = prediction(model, Xtest_set, time_window, rows, columns)
+Ypred, Ytest, plot1, plot2 = make_plots(Predictions, Ytest_set, pred_steps)
 
