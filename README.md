@@ -1,2 +1,2 @@
-# ConvLSTM-for-Burger-s-equations
-Data-driven prediction of inviscid Burger's euqation with a ConvLSTM neural network
+# ConvLSTM for Burgers-Hopf equations
+Data-driven model of inviscid Burgers-Hopf euqation
