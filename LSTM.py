@@ -10,7 +10,7 @@ from keras import backend as K
 from keras.utils.generic_utils import get_custom_objects
 import seaborn as sns
 
-# Produce same random numbers
+
 np.random.seed(0)
 
 
@@ -18,14 +18,14 @@ np.random.seed(0)
 def custom_activation(x):
     return (K.tanh(x) * -0.02)
 
-
 get_custom_objects().update({'custom_activation': Activation(custom_activation)})
+
 
 # read csv data
 data_df = pd.read_csv('GlobalTemperatures.csv')
 data_df.head()
 
-# We use the first two columns as our data
+# We use the first two columns as our data (Temperature and its uncertainty)
 data = data_df[['LandAverageTemperature', 'LandAverageTemperatureUncertainty']]
 
 print('data =', data.shape)
@@ -34,19 +34,18 @@ print('data =', data.shape)
 data.isnull().sum()
 
 # Remove null values
-modified_data = data.dropna()
+dataset = data.dropna()
 
 # Number of features: here are Temperature and Uncertainty
-features = modified_data.shape[1]
+features =dataset.shape[1]
 
-# X1 = np.genfromtxt('U16.dat', dtype = np.float64, delimiter=' ')
 
 
 # Normalizing data
 '''
 for i in range (features):
 
-   modified_data.values[:,i]=preprocessing.scale(modified_data.values[:,i])
+   dataset.values[:,i]=preprocessing.scale(dataset.values[:,i])
 '''
 
 
@@ -54,8 +53,9 @@ for i in range (features):
 def LSTM_datasets(dataset, train_size, test_size, time_window):
     samples = train_size + test_size
     features = dataset.shape[1]
-    new_data = np.transpose(dataset)[:, :samples]
-
+    new_data = np.transpose(dataset.values)[:, :samples]
+    
+    # Creating a sequance of data 
     Xcut = {}
 
     for i in range(time_window):
@@ -64,17 +64,15 @@ def LSTM_datasets(dataset, train_size, test_size, time_window):
     X = Xcut[0]
     for i in range(time_window - 1):
         X = np.vstack([X, Xcut[i + 1]])
-
+        
+    # new data set and corresponding target values
     X = np.transpose(X)
-    # target values for X
     Y = np.transpose(new_data[:, time_window:samples])
-
+    
+    # Creating train and test set
     X_train = X[:train_size, :]
-    print('Xtrain=', np.shape(X_train))
-
     Y_train = Y[:train_size, :]
-    print('Ytrain=', np.shape(Y_train))
-
+   
     X_test = X[train_size:train_size + test_size:, :]
     X_test = np.delete(X_test, (test_size - time_window), axis=0)
     Y_test = Y[train_size:train_size + test_size:, :]
@@ -107,8 +105,10 @@ def LSTM_model(X_train_set, Y_train_set, features, num_hidden, batch_size):
     # model.add(Activation(custom_activation, name='SpecialActivation'))
 
     adam = optimizers.Adam(lr=0.003, beta_1=0.99, beta_2=0.999)
+    
     model.compile(loss='mse', optimizer=adam, metrics=['accuracy'])
-    history = model.fit(X_train_set, Y_train_set, epochs=100, batch_size=batch_size, verbose=2, shuffle=True)
+    
+    history = model.fit(X_train_set, Y_train_set, epochs=50, batch_size=batch_size, verbose=2, shuffle=True)
 
     return model, history
 
@@ -133,17 +133,21 @@ def Prediction(model, X_test_set, time_window):
 
 
 train_size = 3000
-test_size = 153
+test_size = 153 
 time_window = 3
 num_hidden = 50
 batch_size = 32
 
-X_train_set, Y_train, X_test_set, Y_test, features = LSTM_datasets(modified_data.values, train_size, test_size,
+X_train_set, Y_train, X_test_set, Y_test, features = LSTM_datasets(dataset, train_size, test_size,
                                                                    time_window)
 model, history = LSTM_model(X_train_set, Y_train, features, num_hidden, batch_size)
 Y_prediction = Prediction(model, X_test_set, time_window)
 
-# Short-term Predictions
+# save predictions
+np.savetxt('Y_prediction.csv', Y_prediction, delimiter=',')
+np.savetxt('Y_test.csv', Y_test, delimiter=',')
+
+# Plots
 for i in range(features):
     plot1, = plt.plot(Y_test[:, i])
 
@@ -191,6 +195,5 @@ sns.heatmap(Y_prediction[:, 1].reshape((30, 5)))
 plt.title('prediction: Uncertainty')
 plt.show()
 
-np.savetxt('Y_prediction.csv', Y_prediction, delimiter=',')
-np.savetxt('Y_test.csv', Y_test, delimiter=',')
+
 
