@@ -193,6 +193,3 @@ plt.show()
 sns.heatmap(Y_prediction[:, 1].reshape((30, 5)))
 plt.title('prediction: Uncertainty')
 plt.show()
-
-
-
