@@ -11,26 +11,8 @@ import seaborn as sns
 import pandas.util.testing as tm
 from urllib.request import urlretrieve
 
-'''
-# Define encoder-decoder
-def encoder_decoder(data, code_size):
-  features = data.shape[1]
-  m = data.shape[0]
-  # normalize features to have zero mean and variance one
-  for i in range(features):
-        data[:, i] = preprocessing.scale(data[:, i])
-  x_train = np.random.rand(m, features)  # deterministic values
-  x_train_noisy = x_train + np.random.normal(size=(m, features)) # noisy values
-  input_vector = Input(shape=(features,))
-  code = Dense(code_size, activation='tanh')(input_vector)
-  output = Dense(features, activation='tanh')(code)
-  autoencoder = Model(input_vector, output)
-  autoencoder.compile(optimizer='adam', loss='mse')
-  autoencoder.fit(x_train_noisy, x_train, epochs=1)
-  dataset = autoencoder.predict(data)  # denoise data
-  return dataset  
-'''
 
+# import and normalize data
 Origin_data = np.genfromtxt('Burgers.dat', delimiter=' ')
 
 for i in range(16):
@@ -39,9 +21,9 @@ for i in range(16):
 
 # Create datasets for ConvLSTM2d
 def ConvLSTM_dataset(dataset, time_window, rows, columns):
-    features = dataset.shape[0]
+    features = dataset.shape[0]  # number of features
     m = dataset.shape[1]
-    samples = int(m / columns)  # number of images
+    samples = int(m / columns)   # number of images we want to create
     test_size = 10
     train_size = samples - test_size - time_window
 
