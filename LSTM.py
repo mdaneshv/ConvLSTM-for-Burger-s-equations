@@ -24,7 +24,7 @@ get_custom_objects().update({'custom_activation': Activation(custom_activation)}
 data_df = pd.read_csv('GlobalTemperatures.csv')
 data_df.head()
 
-# We use the first two columns as our data (Temperature and its uncertainty)
+# We use the first two columns as our data (Average Temperature and its uncertainty)
 data = data_df[['LandAverageTemperature', 'LandAverageTemperatureUncertainty']]
 
 print('data =', data.shape)
@@ -137,8 +137,7 @@ time_window = 3
 num_hidden = 50
 batch_size = 32
 
-X_train_set, Y_train, X_test_set, Y_test, features = LSTM_datasets(dataset, train_size, test_size,
-                                                                   time_window)
+X_train_set, Y_train, X_test_set, Y_test, features = LSTM_datasets(dataset, train_size, test_size,time_window)                                                                 
 model, history = LSTM_model(X_train_set, Y_train, features, num_hidden, batch_size)
 Y_prediction = Prediction(model, X_test_set, time_window)
 
