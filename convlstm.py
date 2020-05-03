@@ -41,7 +41,7 @@ def encoder_decoder(data, code_size):
 
 '''
 
-Origin_data = np.genfromtxt('U16.dat', delimiter=' ')
+Origin_data = np.genfromtxt('Burgers.dat', delimiter=' ')
 
 for i in range(16):
         Origin_data[:, i] = preprocessing.scale(Origin_data[:, i])
@@ -56,14 +56,14 @@ def ConvLSTM_dataset(dataset, time_window, rows, columns):
     train_size = samples - test_size - time_window
     
 
-    # start converting dataset into 2D-images
+    # Start converting dataset into 2D-images
     Z = np.zeros((samples, rows, columns))  
     for i in range(samples):
         Z[i, :, :] = dataset[:, i * columns:i * columns + columns] # We cut dataset into different parts: 2D-images
 
     image_data = np.transpose(Z)
 
-    # Creating a sequence of data from 2D-images we have created above
+    # creating a sequence of data from 2D-images we have created above
     Znew = {}  
     for i in range(time_window):
         Znew[i] = image_data[:, :, i:samples - (time_window - i - 1)]
@@ -91,7 +91,7 @@ def ConvLSTM_dataset(dataset, time_window, rows, columns):
     return Xtrain_set, Ytrain_set, Xtest_set, Ytest_set
 
 # Define ConvLSTM2D model
-def create_ConvLSTM_layers(X, Y, filters, kernel_size, batch_size, epochs, learning_rate):
+def ConvLSTM_layers(X, Y, filters, kernel_size, batch_size, epochs, learning_rate):
     time_window, rows, columns = np.shape(X)[1], np.shape(X)[2], np.shape(X)[3]
 
     model = Sequential()
@@ -126,7 +126,7 @@ def create_ConvLSTM_layers(X, Y, filters, kernel_size, batch_size, epochs, learn
 
 
 # sequence to sequence predictions
-def prediction(model, X, time_window, rows, columns):  
+def Prediction(model, X, time_window, rows, columns):  
 
     time_window, rows, columns = np.shape(X)[1], np.shape(X)[2], np.shape(X)[3]
 
@@ -189,8 +189,8 @@ learning_rate = 0.003
 
 #dataset = encoder_decoder(np.transpose(Origin_data), code_size)
 Xtrain_set, Ytrain_set, Xtest_set, Ytest_set = ConvLSTM_dataset(Origin_data, time_window, rows, columns)
-model, history = create_ConvLSTM_layers(Xtrain_set, Ytrain_set, filters, kernel_size, batch_size, epochs, learning_rate)
-Predictions = prediction(model, Xtest_set, time_window, rows, columns)
+model, history = ConvLSTM_layers(Xtrain_set, Ytrain_set, filters, kernel_size, batch_size, epochs, learning_rate)
+Predictions = Prediction(model, Xtest_set, time_window, rows, columns)
 Ypred, Ytest, plot1, plot2 = make_plots(Predictions, Ytest_set, pred_steps)
 
 ### prediction starts from element (samples-test_size)*columns from Origin_data
