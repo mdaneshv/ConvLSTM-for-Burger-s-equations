@@ -180,6 +180,7 @@ plt.xlabel('values')
 plt.savefig('dist5')
 plt.show()
 
+
 # Plot heatmap for predictions and true values
 sns.heatmap(Y_test[:, 0].reshape((30, 5)))
 plt.title('true_values: Temperatures')
