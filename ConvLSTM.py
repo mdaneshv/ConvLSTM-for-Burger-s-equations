@@ -155,6 +155,7 @@ batch_size = 512
 epochs = 100
 learning_rate = 0.003
 
+
 #dataset = encoder_decoder(np.transpose(Origin_data), code_size)
 Xtrain_set, Ytrain_set, Xtest_set, Ytest_set = ConvLSTM_dataset(Origin_data, time_window, rows, columns)
 model, history = create_ConvLSTM_layers(Xtrain_set, Ytrain_set, filters, kernel_size, batch_size, epochs, learning_rate)
