@@ -145,6 +145,7 @@ def make_plots(Predictions,Ytest_set, pred_steps):
     return Ypred, Ytest, plot1, plot2
 
 
+
 time_window = 2    # recurrent steps or tiem-steps
 rows = 16          # I chose it to be the same as number of features
 columns = 50       # columns of images 
