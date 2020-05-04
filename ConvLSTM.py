@@ -3,7 +3,7 @@ from sklearn import preprocessing
 import pandas as pd
 import matplotlib.pyplot as plt
 from keras.models import Model, Sequential
-from keras.layers import GRU, LSTM, Dense, Input, Activation, Dropout
+from keras.layers import GRU, LSTM, Dense, Input, Activation, Dropout, BatchNormalization, MaxPooling2D
 from keras.layers.convolutional_recurrent import ConvLSTM2D
 from keras import optimizers
 from keras import backend as K
@@ -13,19 +13,18 @@ from urllib.request import urlretrieve
 
 
 
-Origin_data = np.genfromtxt('Burgers.dat', delimiter=' ')
+Origin_data = np.genfromtxt('U16.dat', delimiter=' ')
 
-for i in range(16):
-        Origin_data[i, :] = preprocessing.scale(Origin_data[i, :])
+#or i in range(16):
+       # Origin_data[i, :] = preprocessing.scale(Origin_data[i, :])
 
 
 # Create datasets for ConvLSTM2d
-def ConvLSTM_dataset(dataset, time_window, rows, columns):
     features = dataset.shape[0] 
     m = dataset.shape[1] 
     samples = int(m / columns)   # number of images 
     test_size = 10
-    train_size = samples - test_size - time_window
+    train_size = samples - test_size - time_steps
     
 
     # start converting dataset into 2D-images
@@ -37,15 +36,15 @@ def ConvLSTM_dataset(dataset, time_window, rows, columns):
 
     # Creating a sequence of data from 2D-images we have created above
     Znew = {}  
-    for i in range(time_window):
-        Znew[i] = image_data[:, :, i:samples - (time_window - i - 1)]
+    for i in range(time_steps):
+        Znew[i] = image_data[:, :, i:samples - (time_steps - i - 1)]
 
     X = Znew[0]
-    for i in range(time_window - 1):
+    for i in range(time_steps - 1):
         X = np.vstack([X, Znew[i + 1]])
 
     X = np.transpose(X)
-    Y = Z[time_window:, :, :]  # target values for X
+    Y = Z[time_steps:, :, :]  # target values for X
 
     # creating train and test sets and corresponding target values from X and Y
               
@@ -55,28 +54,30 @@ def ConvLSTM_dataset(dataset, time_window, rows, columns):
     Y_test = Y[train_size:train_size + test_size, :]
 
     # reshape input and output to be fed into ConvLastm2D layers: input must be 5 dimensional 
-    Xtrain_set = X_train.reshape((X_train.shape[0], time_window, rows, columns, 1))
-    Xtest_set = X_test.reshape((X_test.shape[0], time_window, rows, columns, 1))
+    Xtrain_set = X_train.reshape((X_train.shape[0], time_steps, rows, columns, 1))
+    Xtest_set = X_test.reshape((X_test.shape[0], time_steps, rows, columns, 1))
     Ytrain_set = Y_train.reshape((Y_train.shape[0], rows, columns, 1))
     Ytest_set = Y_test.reshape((Y_test.shape[0], rows, columns, 1))
   
     return Xtrain_set, Ytrain_set, Xtest_set, Ytest_set
 
-
 # Define ConvLSTM2D model
 def create_ConvLSTM_layers(X, Y, filters, kernel_size, batch_size, epochs, learning_rate):
-    time_window, rows, columns = np.shape(X)[1], np.shape(X)[2], np.shape(X)[3]
+    time_steps, rows, columns = np.shape(X)[1], np.shape(X)[2], np.shape(X)[3]
 
     model = Sequential()
 
     model.add(ConvLSTM2D(filters=filters, kernel_size=kernel_size,
-                         input_shape=(time_window, rows, columns, 1),
+                         input_shape=(time_steps, rows, columns, 1),
                          padding='same', return_sequences=True))
+    model.add(BatchNormalization())
+
+    model.add(MaxPooling3D(pool_size=(5,1,1), padding='same'))
     
     
     # last layer has 1 filter
     model.add(ConvLSTM2D(filters=1, kernel_size=kernel_size,    
-                         input_shape=(time_window, rows, columns, 1),
+                         input_shape=(time_steps, rows, columns, 1),
                          padding='same', data_format='channels_last'))
     
 
@@ -91,25 +92,25 @@ def create_ConvLSTM_layers(X, Y, filters, kernel_size, batch_size, epochs, learn
 
 
 # sequence to sequence predictions
-def prediction(model, X, time_window, rows, columns):  
+def prediction(model, X, time_steps, rows, columns):  
 
-    time_window, rows, columns = np.shape(X)[1], np.shape(X)[2], np.shape(X)[3]
+    time_steps, rows, columns = np.shape(X)[1], np.shape(X)[2], np.shape(X)[3]
 
     Predictions = np.zeros((X.shape[0], rows, columns, 1))
 
-    first_sequence = X[0, :, :, :, :].reshape((1, time_window, rows, columns, 1))
+    first_sequence = X[0, :, :, :, :].reshape((1, time_steps, rows, columns, 1))
     # predict the first sequence and store it in Predictions
     Predictions[0, :, :, :] = model.predict(first_sequence)
 
     for i in range(1, X.shape[0]):
-        if i < time_window:
-            ith_sequence = X[i, :, :, :, :].reshape((1, time_window, rows, columns, 1))
+        if i < time_steps:
+            ith_sequence = X[i, :, :, :, :].reshape((1, time_steps, rows, columns, 1))
             # replace the last one in sequence with prediction 
-            ith_sequence[0, (time_window - i):time_window, :, :, :] = Predictions[:i, :, :, :]
+            ith_sequence[0, (time_steps - i):time_steps, :, :, :] = Predictions[:i, :, :, :]
             # now predict the new sequence 
             Predictions[i, :, :, :] = model.predict(ith_sequence)
         else:
-            ith_sequence = Predictions[i - time_window:i, :, :, :].reshape((1, time_window, rows, columns, 1))
+            ith_sequence = Predictions[i - time_steps:i, :, :, :].reshape((1, time_steps, rows, columns, 1))
             Predictions[i, :, :, :] = model.predict(ith_sequence)
 
     return Predictions
@@ -146,8 +147,7 @@ def make_plots(Predictions,Ytest_set, pred_steps):
     return Ypred, Ytest, plot1, plot2
 
 
-
-time_window = 2    # recurrent steps or tiem-steps
+time_steps = 2    # recurrent steps or tiem-steps
 rows = 16          # I chose it to be the same as number of features
 columns = 50       # columns of images 
 pred_steps = 10    # prediction horizon shown on x_axis of plots which is : pred_steps * columns 
@@ -157,11 +157,10 @@ batch_size = 512
 epochs = 100
 learning_rate = 0.003
 
-
 #dataset = encoder_decoder(np.transpose(Origin_data), code_size)
-Xtrain_set, Ytrain_set, Xtest_set, Ytest_set = ConvLSTM_dataset(Origin_data, time_window, rows, columns)
+Xtrain_set, Ytrain_set, Xtest_set, Ytest_set = ConvLSTM_dataset(Origin_data, time_steps, rows, columns)
 model, history = create_ConvLSTM_layers(Xtrain_set, Ytrain_set, filters, kernel_size, batch_size, epochs, learning_rate)
-Predictions = prediction(model, Xtest_set, time_window, rows, columns)
+Predictions = prediction(model, Xtest_set, time_steps, rows, columns)
 Ypred, Ytest, plot1, plot2 = make_plots(Predictions, Ytest_set, pred_steps)
 
 ### prediction starts from element (samples-test_size)*columns from Origin_data
