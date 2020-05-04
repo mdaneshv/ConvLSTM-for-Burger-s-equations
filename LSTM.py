@@ -49,7 +49,7 @@ for i in range (features):
 
 
 # create new data sets for LSTM model
-def LSTM_datasets(dataset, train_size, test_size, time_window):
+def LSTM_datasets(dataset, train_size, test_size, time_steps):
     samples = train_size + test_size
     features = dataset.shape[1]
     new_data = np.transpose(dataset.values)[:, :samples]
@@ -57,28 +57,28 @@ def LSTM_datasets(dataset, train_size, test_size, time_window):
     # Creating a sequance of data 
     Xcut = {}
 
-    for i in range(time_window):
-        Xcut[i] = new_data[:, i:samples - (time_window - i - 1)]
+    for i in range(time_steps):
+        Xcut[i] = new_data[:, i:samples - (time_steps - i - 1)]
 
     X = Xcut[0]
-    for i in range(time_window - 1):
+    for i in range(time_steps - 1):
         X = np.vstack([X, Xcut[i + 1]])
         
     # new data set and corresponding target values
     X = np.transpose(X)
-    Y = np.transpose(new_data[:, time_window:samples])
+    Y = np.transpose(new_data[:, time_steps:samples])
     
     # Creating train and test set
     X_train = X[:train_size, :]
     Y_train = Y[:train_size, :]
    
     X_test = X[train_size:train_size + test_size:, :]
-    X_test = np.delete(X_test, (test_size - time_window), axis=0)
+    X_test = np.delete(X_test, (test_size - time_steps), axis=0)
     Y_test = Y[train_size:train_size + test_size:, :]
 
     # Reshape train and test set into 3-dimensional arrays for Keras layers
-    X_train_set = X_train.reshape((X_train.shape[0], time_window, features))
-    X_test_set = X_test.reshape((X_test.shape[0], time_window, features))
+    X_train_set = X_train.reshape((X_train.shape[0], time_steps, features))
+    X_test_set = X_test.reshape((X_test.shape[0], time_steps, features))
     print("Xtrain shape = ", X_train_set.shape, "Ytrain shape = ", Y_train.shape)
     print("Xtest shape =  ", X_test_set.shape, " Ytest shape =  ", Y_test.shape)
 
@@ -113,33 +113,33 @@ def LSTM_model(X_train_set, Y_train_set, features, num_hidden, batch_size):
 
 
 # sequence to sequence prediction
-def Prediction(model, X_test_set, time_window):
+def Prediction(model, X_test_set, time_steps):
     Y_prediction = np.zeros((X_test_set.shape[0], features))
 
     for i in range(X_test_set.shape[0]):
         if i == 0:
-            tt = X_test_set[0, :, :].reshape((1, time_window, features))
+            tt = X_test_set[0, :, :].reshape((1, time_steps, features))
             Y_prediction[i, :] = model.predict(tt)
-        elif i < time_window:
-            tt = X_test_set[i, :, :].reshape((1, time_window, features))
+        elif i < time_steps:
+            tt = X_test_set[i, :, :].reshape((1, time_steps, features))
             u = Y_prediction[:i, :]
-            tt[0, (time_window - i):time_window, :] = u
+            tt[0, (time_steps - i):time_steps, :] = u
             Y_prediction[i, :] = model.predict(tt)
         else:
-            tt = Y_prediction[i - time_window:i, :].reshape((1, time_window, features))
+            tt = Y_prediction[i - time_steps:i, :].reshape((1, time_steps, features))
             Y_prediction[i, :] = model.predict(tt)
     return Y_prediction
 
 
 train_size = 3000
 test_size = 153 
-time_window = 3
+time_steps = 3
 num_hidden = 50
 batch_size = 32
 
-X_train_set, Y_train, X_test_set, Y_test, features = LSTM_datasets(dataset, train_size, test_size,time_window)                                                                 
+X_train_set, Y_train, X_test_set, Y_test, features = LSTM_datasets(dataset, train_size, test_size,time_steps)                                                                 
 model, history = LSTM_model(X_train_set, Y_train, features, num_hidden, batch_size)
-Y_prediction = Prediction(model, X_test_set, time_window)
+Y_prediction = Prediction(model, X_test_set, time_steps)
 
 # save predictions
 np.savetxt('Y_prediction.csv', Y_prediction, delimiter=',')
