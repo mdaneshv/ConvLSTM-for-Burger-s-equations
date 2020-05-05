@@ -1,9 +1,10 @@
+
 import numpy as np
 from sklearn import preprocessing
 import pandas as pd
 import matplotlib.pyplot as plt
 from keras.models import Model, Sequential
-from keras.layers import GRU, LSTM, Dense, Input, Activation, Dropout, BatchNormalization, MaxPooling2D
+from keras.layers import GRU, LSTM, Dense, Input, Activation, Dropout, BatchNormalization, MaxPooling3D
 from keras.layers.convolutional_recurrent import ConvLSTM2D
 from keras import optimizers
 from keras import backend as K
@@ -13,13 +14,14 @@ from urllib.request import urlretrieve
 
 
 
-Origin_data = np.genfromtxt('U16.dat', delimiter=' ')
+Origin_data = np.genfromtxt('Burgers.dat', delimiter=' ')
 
 #or i in range(16):
        # Origin_data[i, :] = preprocessing.scale(Origin_data[i, :])
 
 
 # Create datasets for ConvLSTM2d
+def ConvLSTM_dataset(dataset, time_steps, rows, columns):
     features = dataset.shape[0] 
     m = dataset.shape[1] 
     samples = int(m / columns)   # number of images 
@@ -149,7 +151,7 @@ def make_plots(Predictions,Ytest_set, pred_steps):
 
 time_steps = 2    # recurrent steps or tiem-steps
 rows = 16          # I chose it to be the same as number of features
-columns = 50       # columns of images 
+columns = 50      # columns of images 
 pred_steps = 10    # prediction horizon shown on x_axis of plots which is : pred_steps * columns 
 filters = 30       # number of filters in convolutional layres
 kernel_size = (100,1)
