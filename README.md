@@ -1,2 +1,2 @@
-# ConvLSTM for Burgers-Hopf data-driven model
+# ConvLSTM for Burgers-Hopf Data-driven Model
 
