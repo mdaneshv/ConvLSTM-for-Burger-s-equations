@@ -16,8 +16,8 @@ from urllib.request import urlretrieve
 
 Origin_data = np.genfromtxt('Burgers.dat', delimiter=' ')
 
-#or i in range(16):
-       # Origin_data[i, :] = preprocessing.scale(Origin_data[i, :])
+for i in range(16):
+        Origin_data[i, :] = preprocessing.scale(Origin_data[i, :])
 
 
 # Create datasets for ConvLSTM2d
