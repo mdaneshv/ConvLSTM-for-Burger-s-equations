@@ -16,7 +16,7 @@ with open("s.txt","r") as csvfile:
     for row in plots:
         x=np.linspace(0,11,11)
         y.append(float(row[0]))
-    #print(y)   #y.append((row[1]))
+   
 plt.plot(x,y, label='Data')
 plt.title('Data')
 
@@ -37,7 +37,8 @@ print(stepwise_model.aic())
 model = ARIMA(y, order=(1,0,0))
 model_fit = model.fit(disp=0)
 print(model_fit.summary())
-# plot residual errors
+
+# reiduals
 residuals = DataFrame(model_fit.resid)
 residuals.plot()
 plt.title('residuals')
@@ -47,7 +48,7 @@ plt.title('density of residuals')
 plt.show()
 print(residuals.describe())
 
-
+# predictions
 size = int(len(y) * 0.9)
 train, test = y[0:size], y[size:len(y)]
 history = [x for x in train]
