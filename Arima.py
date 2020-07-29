@@ -33,7 +33,7 @@ print(stepwise_model.aic())
 
 
 
-
+# after finding the best orders for ARIMA model using AIC method, we find parameters of that model.
 model = ARIMA(y, order=(1,0,0))
 model_fit = model.fit(disp=0)
 print(model_fit.summary())
