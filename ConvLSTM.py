@@ -24,15 +24,15 @@ for i in range(16):
 def ConvLSTM_dataset(dataset, time_steps, rows, columns):
     features = dataset.shape[0] 
     m = dataset.shape[1] 
-    samples = int(m / columns)   # number of images 
-    test_size = 10
+    samples = int(m / columns)    # number of images created from original dataset
+    test_size = 10    # for original dataset: test size = 10*columns
     train_size = samples - test_size - time_steps
     
 
     # start converting dataset into 2D-images
     Z = np.zeros((samples, rows, columns))  
     for i in range(samples):
-        Z[i, :, :] = dataset[:, i * columns:i * columns + columns] # We cut dataset into different parts: 2D-images
+        Z[i, :, :] = dataset[:, i * columns:i * columns + columns]    # We cut dataset into different parts: 2D-images
 
     image_data = np.transpose(Z)
 
@@ -46,7 +46,7 @@ def ConvLSTM_dataset(dataset, time_steps, rows, columns):
         X = np.vstack([X, Znew[i + 1]])
 
     X = np.transpose(X)
-    Y = Z[time_steps:, :, :]  # target values for X
+    Y = Z[time_steps:, :, :]    # target values for X
 
     # creating train and test sets and corresponding target values from X and Y
               
@@ -131,19 +131,12 @@ def make_plots(Predictions,Ytest_set, pred_steps):
     # plots  
     for i in range(rows):
         plot1, = plt.plot(Ytest[i,:])
-
         plot2, = plt.plot(Ypred[i,:])
-
         plt.xlabel('prediction horizon')
-
         plt.ylabel('$x[%i]$' % i)
-
         plt.title('Prediction for feature $x[%i]$ using ConvLSTM' % i, fontsize=10)
-
         plt.legend([plot1, plot2], ["true_values", "prediction"])
-
         plt.savefig('predction for %i' % i)
-
         plt.show()
 
     return Ypred, Ytest, plot1, plot2
