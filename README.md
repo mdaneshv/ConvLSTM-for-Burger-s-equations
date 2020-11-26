@@ -1,6 +1,6 @@
 # 1- ConvLSTM for Burgers-Hopf data-driven model
 # 2- Data analysis and data cleaning in python
-# 3- Neural networks, kmeans algorithm and logestic regression
+# 3- Neural networks, kmeans algorithm and logistic regression
 # 4- Dataset generated from Burgers equations for ConvLSTM neural network.
 
 Link to statistics of machine learning.pdf
