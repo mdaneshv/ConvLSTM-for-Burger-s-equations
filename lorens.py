@@ -1,15 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
-# This import registers the 3D projection, but is otherwise unused.
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
+from mpl_toolkits.mplot3d import Axes3D  
 
 
 def lorenz(x, y, z, sigma=10, rho=28, beta=2.667):
     '''
-    Given:
        x, y, z: a point of interest in three dimensional space
        s, r, b: parameters defining the lorenz attractor
-    Returns:
+       Returns:
        x_dot, y_dot, z_dot: values of the lorenz attractor's partial
            derivatives at the point x, y, z
     '''
@@ -23,9 +21,9 @@ dt = 0.0005
 num_steps = 600000
 
 # Need one more for the initial values
-xs = np.empty(num_steps + 1)
-ys = np.empty(num_steps + 1)
-zs = np.empty(num_steps + 1)
+xs = np.zeros(num_steps + 1)
+ys = np.zeros(num_steps + 1)
+zs = np.zeros(num_steps + 1)
 
 # Set initial values
 xs[0], ys[0], zs[0] = (0, 1., 1.05)
