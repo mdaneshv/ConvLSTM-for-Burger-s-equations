@@ -4,7 +4,6 @@
 # computing statistics, etc
 #
 
-
 import numpy as np
 import math
 import time as walltime
