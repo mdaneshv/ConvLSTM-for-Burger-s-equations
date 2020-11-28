@@ -94,3 +94,4 @@ iteration = np.arange(0,300)
 plt.plot(iteration,l)
 plt.title('loss')
 plt.show()
+
