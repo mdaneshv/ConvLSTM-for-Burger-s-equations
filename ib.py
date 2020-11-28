@@ -597,3 +597,5 @@ with open('lastu.dat', 'w') as handle:
       handle.write(str(solndat.u[i]))
       handle.write(" ")
    handle.write("\n")
+
+   
