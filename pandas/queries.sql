@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS orders (
     `orderDate` DATE NULL,
     `requiredDate` DATE NULL,
     `shippedDate` DATE DEFAULT NULL,
-    `status` VARCHAR(15) NULL,
+    `status` VARCHAR(30) NULL,
     `comments` TEXT,
     `customerNumber` INT NOT NULL,
     `customerName` VARCHAR(30) NOT NULL,
