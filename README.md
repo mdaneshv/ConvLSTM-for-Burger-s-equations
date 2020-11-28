@@ -1,3 +1,4 @@
+# Mohammad Daneshvar
 # 1- ConvLSTM for Burgers-Hopf data-driven model
 # 2- Dataset generated from Burgers-Hopf equation for ConvLSTM neural network
 # 3- Data analysis and data cleaning in python
