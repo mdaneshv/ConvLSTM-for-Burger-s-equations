@@ -11,19 +11,15 @@ import random
 def cluster(X, new_sample, num_clus):
     
     s_clus=random.choices(X, k = num_clus)
-
-
     m = np.shape(X)[0] 
- 
-
+    
     for num_iter in range(100):
-
+        
         # cluster ssignment
         ind = []    
         for i in range(m):
 
             b = []
-
             for j in range (num_clus):
                 a = np.dot((X[i]-s_clus[j]),(X[i]-s_clus[j]))
                 b.append(a)
@@ -61,3 +57,4 @@ print('Class of samples X = ', ind)
 print('Location of clusters = ', s_clus)
 print('New sample is =', new_sample)
 print('Class of new sample is = ', new_ind)
+
