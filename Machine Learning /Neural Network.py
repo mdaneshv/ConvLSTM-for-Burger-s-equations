@@ -1,16 +1,23 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[49]:
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+np.random.seed(123)
 
 
 def initial(X, Y, n_h):
     
     (n,m) = np.shape(X)
-    n_y = np.shape(Y)[0]
-    w1 = np.zeros((n_h, n))
-    w2 = np.zeros((n_y, n_h))
-    b1 = np.zeros((n_h, m))
-    b2 = np.zeros((n_y, m))
+    n_y = Y.shape[0]
+    w1 = np.random.randn(n_h, n)*0.01
+    w2 = np.random.randn(n_y, n_h)*0.01
+    b1 = np.zeros((n_h, 1))
+    b2 = np.zeros((n_y, 1))
     return [w1, w2, b1, b2]
 
 
@@ -43,54 +50,30 @@ def back_propagation(X, Y, w1, w2, parameters):
     dZ_2 = A2-Y   #(n_y,m)
     dW_2 = (1/m)*np.dot(dZ_2, A1.T)   #(n_y,n_h)
     db_2 = (1/m)*np.sum(dZ_2, axis=1, keepdims=True)
-    dZ_1 = np.multiply(np.dot(w2.T, dZ_2),(1 - np.power(A1, 2)))   #(n_h,m)
-    dW_1 = (1/m)*np.dot(dZ_1, X.T)  #(n_h,n_x)
+    dZ_1 = np.multiply(np.dot(w2.T, dZ_2), 1 - np.power(A1, 2))   #(n_h,m)
+    dW_1 = (1/m)*np.dot(dZ_1, X.T)   #(n_h,n_x)
     db_1 = (1/m)*np.sum(dZ_1, axis=1, keepdims=True)
     return [dW_1, dW_2, db_1, db_2]
 
+
+def grdient_descent(X, Y, n_h, lr,
+                    reg, num_iter): 
     
-lr = 20
-reg = 0
-n_h = 100
+    m = np.shape(X)[0]
+    [w1, w2, b1, b2] = initial(X, Y, n_h) 
+    l = [] 
+    for i in range(num_iter):
+        parameters = forward_propagation(X, w1, w2, b1, b2)
+        A2 = parameters["A2"]
+        loss = loss_function(X, Y, A2, w1,
+                             w2, b1, b2)
+        l.append(loss)
+        [dW_1, dW_2, db_1, db_2] = back_propagation(X, Y, w1, w2,
+                                                    parameters)
 
+        w1 = (1 - reg/m)*w1 - lr*dW_1
+        w2 = (1 - reg/m)*w2 - lr*dW_2
+        b1 = b1 - lr*db_1
+        b2 = b2 - lr*db_2
+    return [w1, w2, b1, b2]     
 
-X = np.array([[1, 2, -1, -0.1],
-              [2, 1, -1, 0],
-              [-1, 0.5, 0, -2]])
-Y = np.array([[1, 1, 0, 0]])
-m = np.shape(X)[1]
-[w1, w2, b1, b2] = initial(X, Y, n_h) 
-l = [] 
-
-
-# Train the network: apply gradient descent method
-for i in range(0,300):
-    
-    parameters = forward_propagation(X, w1, w2, b1, b2)
-    A2 = parameters["A2"]
-    loss = loss_function(X, Y, A2, w1,
-                         w2, b1, b2)
-    l.append(loss)
-    [dW_1, dW_2, db_1, db_2] = back_propagation(X, Y, w1, w2,
-                                                parameters)
-    
-    w1 = (1 - reg/m)*w1 - lr*dW_1
-    w2 = (1 - reg/m)*w2 - lr*dW_2
-    b1 = b1 - lr*db_1
-    b2 = b2 - lr*db_2
-
-    
- # Predict new samples
-X_test = np.array([[0, 1, -1, 0.1],
-              [-2, -1, 0, 0],
-              [1, -0.5, -1, 2]])
-
-parameters = forward_propagation(X_test, w1, w2, b1, b2) 
-A2 = parameters["A2"]
-
-print('predict=', A2)
-
-iteration = np.linspace(0,300,300)
-plt.plot(iteration,l)
-plt.title('loss')
-plt.show()
