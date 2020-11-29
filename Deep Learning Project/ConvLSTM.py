@@ -10,6 +10,7 @@ from keras.layers.convolutional_recurrent import ConvLSTM2D
 from keras import optimizers
 from keras import backend as K
 import seaborn as sns
+np.random.seed(123)
 
 
 # create datasets for ConvLSTM2d
