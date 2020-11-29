@@ -16,9 +16,9 @@ import seaborn as sns
 def ConvLSTM_dataset(original_dataset, train_size,
                      time_steps, rows, columns):
   
-    (features, m) = original_dataset.shape 
+    (nfeatures, m) = original_dataset.shape 
     # preprocess data
-    for i in range(features):
+    for i in range(nfeatures):
         original_dataset[i, :] = preprocessing.scale(original_dataset[i, :])
 
     num_img = int(m/columns)    # number of images to be created from original dataset
@@ -38,7 +38,7 @@ def ConvLSTM_dataset(original_dataset, train_size,
     for i in range(time_steps - 1):
         X = np.vstack([X, Znew[i + 1]])
 
-    X = np.transpose(X)
+    X = np.transpose(X)    # new time series dataset of images
     Y = Z[time_steps:, :, :]    # target values for X
 
     # create train and test sets and corresponding target values    
@@ -129,16 +129,16 @@ def make_plots(Predictions, Ytest_set, pred_steps):
     return Ypred, Ytest, plot1, plot2
 
 
-# load data
+# load original dataset (scaler values)
 data = np.genfromtxt('Burgers.dat', delimiter=' ')  
 
 # parameters
-m = data.shape[1]
+(nfeatures, m) = data.shape
 time_steps = 2     # recurrent steps
-rows = 16         # I chose it to be the same as number of features
-columns = 50     # columns of matrices
+rows = nfeatures      
+columns = 50    
 train_size = int(m/columns) - 10
-pred_steps = 10    # Prediction horizon will be pred_steps * columns 
+pred_steps = 10    # < test size. Prediction horizon will be pred_steps * columns 
 filters = 30      
 kernel_size = (100,1)
 batch_size = 512
