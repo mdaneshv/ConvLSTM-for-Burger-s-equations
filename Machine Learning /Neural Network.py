@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[49]:
-
-
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -76,4 +73,3 @@ def grdient_descent(X, Y, n_h, lr,
         b1 = b1 - lr*db_1
         b2 = b2 - lr*db_2
     return [w1, w2, b1, b2]     
-
