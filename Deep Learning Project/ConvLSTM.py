@@ -131,10 +131,10 @@ def make_plots(Predictions, Ytest_set, pred_steps):
 
 
 # load original dataset (scaler values)
-data = np.genfromtxt('Burgers.dat', delimiter=' ')  
+original_data = np.genfromtxt('Burgers.dat', delimiter=' ')  
 
 # parameters
-(nfeatures, m) = data.shape
+(nfeatures, m) = original_data.shape
 time_steps = 2     # recurrent steps
 rows = nfeatures      
 columns = 50    
@@ -146,7 +146,7 @@ batch_size = 512
 epochs = 100
 learning_rate = 0.003
 
-Xtrain_set, Ytrain_set, Xtest_set, Ytest_set = ConvLSTM_dataset(data, train_size, time_steps,
+Xtrain_set, Ytrain_set, Xtest_set, Ytest_set = ConvLSTM_dataset(original_data, train_size, time_steps,
                                                                 rows, columns)
 model, history = create_ConvLSTM_layers(Xtrain_set, Ytrain_set, filters, kernel_size, 
                                         batch_size, epochs, learning_rate)
