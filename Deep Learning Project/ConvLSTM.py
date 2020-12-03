@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 """
-Created on Mon Oct 7 21:14:46 2019
+Created on Mon Oct 7 2019
 
 @author: Mohammad Daneshvar
 """
