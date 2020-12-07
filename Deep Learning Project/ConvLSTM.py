@@ -79,7 +79,7 @@ def create_ConvLSTM_layers(X, Y, filters, kernel_size, batch_size,
                          padding='same', data_format='channels_last'))
     
     adam = optimizers.Adam(lr=learning_rate, beta_1=0.99, beta_2=0.999)
-    model.compile(loss='mse', optimizer=adam, metrics=['accuracy'])
+    model.compile(loss='mse', optimizer=adam, metrics=['RootMeanSquaredError'])
 
     # fit model to data
     history = model.fit(X, Y, epochs=epochs, batch_size=batch_size, verbose=2, shuffle=True)
