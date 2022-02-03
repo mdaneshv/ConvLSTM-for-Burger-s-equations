@@ -6,109 +6,137 @@ Created on Mon Oct 7 2019
 
 import numpy as np
 from sklearn import preprocessing
-import pandas as pd
 import matplotlib.pyplot as plt
-from keras.models import Model, Sequential
-from keras.layers import GRU, LSTM, Dense, Input, Activation
-from keras.layers import Dropout, BatchNormalization, MaxPooling3D
-from keras.layers.convolutional_recurrent import ConvLSTM2D
-from keras import optimizers
-from keras import backend as K
 import seaborn as sns
+
+import tensorflow as tf
+from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.layers import GRU, LSTM, ConvLSTM2D
+from tensorflow.keras.layers import Dense, Input, Activation, Dropout, BatchNormalization, MaxPooling3D
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping
+from keras import backend as K
 np.random.seed(123)
 
 
-# create datasets for ConvLSTM2d
-def ConvLSTM_dataset(original_dataset, train_size,
-                     time_steps, rows, columns):
-  
-    (nfeatures, m) = original_dataset.shape 
-    # preprocess data
-    for i in range(nfeatures):
+# Fuction to create datasets
+# for the ConvLSTM2d model
+def create_dataset(original_dataset,
+                   lookback, n_cols):
+    n_features, n_samples = original_dataset.shape
+
+    # data preprocessing
+    for i in range(n_features):
         original_dataset[i, :] = preprocessing.scale(original_dataset[i, :])
-
-    num_img = int(m/columns)    # number of images to be created from original dataset
+        
+    # Number of 2D-images(matrices)
+    # to be created from the original dataset
+    n_images = int(n_samples/n_cols)  
+    print('n_images = ', n_images)  
     
-    # start converting dataset into 2D-images
-    Z = np.zeros((num_img, rows, columns))  
-    for i in range(num_img):
-        Z[i, :, :] = original_dataset[:, i * columns:i * columns + columns]  
-    image_dataset = np.transpose(Z)   # Now we have a new dataset with 2D images
+    # Converting data into 2D-images(matrices).
+    # Number of rows in the matrices equals 
+    # the number of features in the original dataset
+    Z = np.zeros((n_images, n_features, n_cols))  
+    for i in range(n_images):
+        Z[i, :] = original_dataset[:, i*n_cols:(i+1)*n_cols]  
+        
+     # The new dataset containing images    
+    image_dataset = np.transpose(Z)  
 
-    # create time series data from 2D-images
+    # Creating time-series data from images
     Znew = {}  
-    for i in range(time_steps):
-        Znew[i] = image_dataset[:, :, i:num_img - (time_steps - i - 1)]
+    for i in range(lookback):
+        Znew[i] = image_dataset[:, :, i:n_images - (lookback - i - 1)]
 
     X = Znew[0]
-    for i in range(time_steps - 1):
+    for i in range(lookback - 1):
         X = np.vstack([X, Znew[i + 1]])
 
-    X = np.transpose(X)    # new time series dataset of images
-    Y = Z[time_steps:, :, :]    # target values for X
+    # A time-series dataset from images
+    X = np.transpose(X) 
+    # Target values for X
+    Y = Z[lookback:, :]   
 
-    # create train and test sets and corresponding target values    
-    test_size = num_img - train_size - time_steps
-    X_train = X[:train_size, :]
-    Y_train = Y[:train_size, :]
-    X_test = X[train_size:train_size + test_size, :]
-    Y_test = Y[train_size:train_size + test_size, :]
+    # Train and test sets and the corresponding target values   
+    train_size = int(0.8 * n_images)  
+    test_size = n_images - train_size - lookback
+    Xtrain = X[:train_size, :]
+    Ytrain = Y[:train_size, :]
+    Xtest = X[train_size:train_size + test_size, :]
+    Ytest = Y[train_size:train_size + test_size, :]
 
-    # reshape input and output to be fed into ConvLastm2D layers: input must be 5 dimensional 
-    Xtrain_set = X_train.reshape((X_train.shape[0], time_steps, rows, columns, 1))
-    Xtest_set = X_test.reshape((X_test.shape[0], time_steps, rows, columns, 1))
-    Ytrain_set = Y_train.reshape((Y_train.shape[0], rows, columns, 1))
-    Ytest_set = Y_test.reshape((Y_test.shape[0], rows, columns, 1))
+    # Reshape the input and output to be fed into ConvLastm2D layers
+    # Input must be 5 dimensional 
+    Xtrain = Xtrain.reshape((Xtrain.shape[0], lookback, n_features, n_cols, 1))
+    Xtest = Xtest.reshape((Xtest.shape[0], lookback, n_features, n_cols, 1))
+    Ytrain = Ytrain.reshape((Ytrain.shape[0], n_features, n_cols, 1))
+    Ytest = Ytest.reshape((Ytest.shape[0], n_features, n_cols, 1))
+
+    print('n_rows =', n_features)
+    print('n_columns =', n_cols)
+    print('lookback =', lookback, '\n')
+    print('Xtrain =', Xtrain.shape)
+    print('Ytrain =', Ytrain.shape)
+    print('Xtest =', Xtest.shape)
+    print('Ytest =', Ytest.shape)
   
-    return Xtrain_set, Ytrain_set, Xtest_set, Ytest_set
+    return Xtrain, Ytrain, Xtest, Ytest
 
 
-# define ConvLSTM2D model
-def create_ConvLSTM_layers(X, Y, filters, kernel_size, batch_size,
-                           epochs, learning_rate):
-        
-    (time_steps, rows, columns) = X.shape[1:]
-    model = Sequential()
-    model.add(ConvLSTM2D(filters=filters, kernel_size=kernel_size,
-                         input_shape=(time_steps, rows, columns, 1),
-                         padding='same', return_sequences=True))
-    model.add(BatchNormalization())
-    model.add(MaxPooling3D(pool_size=(5,1,1), padding='same'))
-    model.add(ConvLSTM2D(filters=1, kernel_size=kernel_size,    
-                         input_shape=(time_steps, rows, columns, 1),
-                         padding='same', data_format='channels_last'))
+# Build the ConvLSTM model
+def build_ConvLSTM_model(Xtrain):
     
-    adam = optimizers.Adam(lr=learning_rate, beta_1=0.99, beta_2=0.999)
-    model.compile(loss='mse', optimizer=adam, metrics=['RootMeanSquaredError'])
+    # A functional model 
+    input_layer = Input(shape=Xtrain.shape[1:])
+    x = ConvLSTM2D(filters=64, kernel_size=4, padding='same', return_sequences=True)(input_layer)
+    x = BatchNormalization()(x)
+    x = MaxPooling3D(pool_size=(5,1,1), padding='same')(x)
+    output = ConvLSTM2D(filters=1, kernel_size=4, padding='same', data_format='channels_last')(x)
+    model = Model(inputs=input_layer, outputs=output)
+    return model
+  
+def compile_model(model, Xtrain, Ytrain):
+  
+  # Callback for the early stopping
+  callback = EarlyStopping(monitor='loss', patience=5)
+  
+  adam = Adam(learning_rate=0.001, beta_1=0.99, beta_2=0.999)
+  model.compile(loss='mse', optimizer=adam, metrics=['RootMeanSquaredError'])
 
-    # fit model to data
-    history = model.fit(X, Y, epochs=epochs, batch_size=batch_size, verbose=2, shuffle=True)
+  # Fit model to the data
+  history = model.fit(Xtrain, Ytrain, epochs=1, batch_size=64,
+                      callbacks = [callback], verbose=2, shuffle=True)
 
-    return model, history
+  return history
 
 
-# sequence to sequence predictions
-# prediction starts from element (samples-test_size)*columns from original_data
-def prediction(model, X, time_steps, rows, columns):  
+# A function for sequence to sequence predictions
+def prediction(model, Xtest): 
 
-    (time_steps, rows, columns) = X.shape[1:]
-    Predictions = np.zeros((X.shape[0], rows, columns, 1))
-    first_sequence = X[0, :, :, :, :].reshape((1, time_steps, rows, columns, 1))
+    # Remove the dimension of size 1 (the channels)
+    Xtest = np.squeeze(Xtest)
 
-    # predict the first sequence and store it in Predictions
-    Predictions[0, :, :, :] = model.predict(first_sequence)
+    (lookback, n_features, n_cols) = Xtest.shape[1:]
+    Predictions = np.zeros((Xtest.shape[0], n_features, n_cols, 1))
+    first_sequence = Xtest[0, :].reshape((1, lookback, n_features, n_cols, 1))
+
+    # Predict the first sequence and store it in Predictions
+    Predictions[0, :] = model.predict(first_sequence)
     
-    # now predict the rest    
-    for i in range(1, X.shape[0]):
-        if i < time_steps:
-            ith_sequence = X[i, :, :, :, :].reshape((1, time_steps, rows, columns, 1))
-            # replace the last one in sequence with prediction 
-            ith_sequence[0, (time_steps - i):time_steps, :, :, :] = Predictions[:i, :, :, :]
-            # now predict the new sequence 
-            Predictions[i, :, :, :] = model.predict(ith_sequence)
+    # Now predict the rest    
+    for i in range(1, Xtest.shape[0]):
+        if i < lookback:
+            ith_sequence = Xtest[i, :].reshape((1, lookback, n_features, n_cols, 1))
+
+            # Replace the last one in the sequence with prediction 
+            ith_sequence[0, (lookback - i):lookback, :] = Predictions[:i, :]
+
+            # Now predict the new sequence 
+            Predictions[i, :] = model.predict(ith_sequence)
         else:
-            ith_sequence = Predictions[i - time_steps:i, :, :, :].reshape((1, time_steps, rows, columns, 1))
-            Predictions[i, :, :, :] = model.predict(ith_sequence)
+            ith_sequence = Predictions[i - lookback:i, :].reshape((1, lookback, n_features, n_cols, 1))
+            Predictions[i, :] = model.predict(ith_sequence)
 
     return Predictions
 
