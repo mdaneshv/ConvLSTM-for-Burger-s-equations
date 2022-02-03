@@ -5,9 +5,11 @@ Created on Mon Oct 7 2019
 """
 
 import numpy as np
-from sklearn import preprocessing
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+from sklearn import preprocessing
+from sklearn.preprocessing import StandardScaler
 
 import tensorflow as tf
 from tensorflow.keras.models import Model, Sequential
@@ -58,7 +60,8 @@ def create_dataset(original_dataset,
   # Target values for X
   Y = Z[lookback:, :]   
 
-  # Train and test sets and the corresponding target values   
+  # Train and test sets and
+  # the corresponding target values   
   train_size = int(0.8 * n_images)  
   test_size = n_images - train_size - lookback
   Xtrain = X[:train_size, :]
@@ -66,7 +69,8 @@ def create_dataset(original_dataset,
   Xtest = X[train_size:train_size + test_size, :]
   Ytest = Y[train_size:train_size + test_size, :]
 
-  # Reshape the input and output to be fed into ConvLastm2D layers
+  # Reshape the input and output to be fed
+  # into ConvLastm2D layers
   # Input must be 5 dimensional 
   Xtrain = Xtrain.reshape((Xtrain.shape[0], lookback, n_features, n_cols, 1))
   Xtest = Xtest.reshape((Xtest.shape[0], lookback, n_features, n_cols, 1))
@@ -114,14 +118,15 @@ def compile_model(model, Xtrain, Ytrain):
 # A function for sequence to sequence predictions
 def prediction(model, Xtest): 
   
-  # Remove the dimension of size 1 (the channels)
+  # Remove the dimension of size 1
   Xtest = np.squeeze(Xtest)
 
   (lookback, n_features, n_cols) = Xtest.shape[1:]
   Predictions = np.zeros((Xtest.shape[0], n_features, n_cols, 1))
   first_sequence = Xtest[0, :].reshape((1, lookback, n_features, n_cols, 1))
 
-  # Predict the first sequence and store it in Predictions
+  # Predict the first sequence and
+  # store it in Predictions
   Predictions[0, :] = model.predict(first_sequence)
 
   # Now predict the rest    
