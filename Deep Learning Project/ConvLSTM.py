@@ -14,22 +14,30 @@ from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import GRU, LSTM, ConvLSTM2D
-from tensorflow.keras.layers import Dense, Input, Activation, Dropout, BatchNormalization, MaxPooling3D
+from tensorflow.keras.layers import Dense, Input, Activation
+from tensorflow.keras.layers import Dropout, BatchNormalization, MaxPooling3D
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 from keras import backend as K
 np.random.seed(123)
 
 
-# Fuction to create datasets
-# for the ConvLSTM2d model
+# Standardize data
+# In the original dataset the rows represent the features
+# and the columns represent different samples
+def preprocess_data(original_dataset):
+  scaler = StandardScaler()
+  original_dataset = scaler.fit_transform(original_dataset.T)
+  original_dataset = original_dataset.T
+  return original_dataset
+
+
+# Fuction to create images from the 
+# original dataset and then create a 
+# time-series dataset from the images
 def create_dataset(original_dataset,
                    lookback, n_cols):
   n_features, n_samples = original_dataset.shape
-
-  # data preprocessing
-  for i in range(n_features):
-      original_dataset[i, :] = preprocessing.scale(original_dataset[i, :])
 
   # Number of 2D-images(matrices)
   # to be created from the original dataset
@@ -39,21 +47,21 @@ def create_dataset(original_dataset,
   # Converting data into 2D-images(matrices).
   # Number of rows in the matrices equals 
   # the number of features in the original dataset
-  Z = np.zeros((n_images, n_features, n_cols))  
+  images = np.zeros((n_images, n_features, n_cols))  
   for i in range(n_images):
-      Z[i, :] = original_dataset[:, i*n_cols:(i+1)*n_cols]  
+      images[i, :] = original_dataset[:, i*n_cols:(i+1)*n_cols]  
 
    # The new dataset containing images    
-  image_dataset = np.transpose(Z)  
+  images = np.transpose(images)  
 
   # Creating time-series data from images
-  Znew = {}  
+  Z = {}  
   for i in range(lookback):
-      Znew[i] = image_dataset[:, :, i:n_images - (lookback - i - 1)]
+      Z[i] = images[:, :, i:n_images - (lookback - i - 1)]
 
-  X = Znew[0]
+  X = Z[0]
   for i in range(lookback - 1):
-      X = np.vstack([X, Znew[i + 1]])
+      X = np.vstack([X, Z[i + 1]])
 
   # A time-series dataset from images
   X = np.transpose(X) 
@@ -89,9 +97,8 @@ def create_dataset(original_dataset,
 
 
 # Build the ConvLSTM model
+# Using a functional model
 def build_ConvLSTM_model(Xtrain):
-  
-  # A functional model 
   input_layer = Input(shape=Xtrain.shape[1:])
   x = ConvLSTM2D(filters=64, kernel_size=4, padding='same', return_sequences=True)(input_layer)
   x = BatchNormalization()(x)
@@ -99,8 +106,9 @@ def build_ConvLSTM_model(Xtrain):
   output = ConvLSTM2D(filters=1, kernel_size=4, padding='same', data_format='channels_last')(x)
   model = Model(inputs=input_layer, outputs=output)
   return model
+
   
-def compile_model(model, Xtrain, Ytrain):
+def compile_and_fit_model(model, Xtrain, Ytrain):
   
   # Callback for the early stopping
   callback = EarlyStopping(monitor='loss', patience=5)
