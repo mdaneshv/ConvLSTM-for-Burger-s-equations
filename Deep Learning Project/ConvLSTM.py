@@ -51,22 +51,20 @@ def create_dataset(original_dataset,
   for i in range(n_images):
       images[i, :] = original_dataset[:, i*n_cols:(i+1)*n_cols]  
 
-   # The new dataset containing images    
-  images = np.transpose(images)  
+ # Target values for the time-series images 
+  Y = images[lookback:, :]   
 
-  # Creating time-series data from images
+  # Creating time-series data from images 
+  images = np.transpose(images)  
   Z = {}  
   for i in range(lookback):
       Z[i] = images[:, :, i:n_images - (lookback - i - 1)]
-
+  
+  # Time-series data from images   
   X = Z[0]
   for i in range(lookback - 1):
-      X = np.vstack([X, Z[i + 1]])
-
-  # A time-series dataset from images
-  X = np.transpose(X) 
-  # Target values for X
-  Y = Z[lookback:, :]   
+      X = np.vstack([X, Z[i + 1]]) 
+  X = np.transpose(X)   
 
   # Train and test sets and
   # the corresponding target values   
