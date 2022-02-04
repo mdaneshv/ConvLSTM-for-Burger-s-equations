@@ -78,7 +78,7 @@ def create_dataset(original_dataset,
   Ytest = Y[train_size:train_size + test_size, :]
 
   # Reshape the input and output to be fed
-  # into ConvLastm2D layers
+  # into ConvLSTM layers
   # Input must be 5 dimensional 
   Xtrain = Xtrain.reshape((Xtrain.shape[0], lookback, n_features, n_cols, 1))
   Xtest = Xtest.reshape((Xtest.shape[0], lookback, n_features, n_cols, 1))
