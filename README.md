@@ -1,6 +1,6 @@
 
 # Deep Learning Project:
-  - ## data
+  - ## Data
   - ## Model
   - ## Summary (pdf file)
 # Machine Learning:
