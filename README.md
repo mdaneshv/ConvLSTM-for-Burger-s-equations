@@ -7,7 +7,7 @@ This repository contains data science projects on deep learning and machine lear
 |:-----|:--------|
 |:spades:|[Data Driven Prediction of Dynamical Systems](https://github.com/mdaneshv/DataScience/blob/master/Deep%20Learning%20Project/README.md)|        
 |:diamonds:|[Convolutional Neural Networks with TensorFlow](https://github.com/mdaneshv/DataScience/blob/master/Tensorflow/CNN.ipynb)|    
-|:clubs:|[Deep Convolutional Neural Networks: EfficientNet]()|     
+|:clubs:|[Deep Convolutional Neural Networks: EfficientNet](https://github.com/mdaneshv/DataScience/blob/master/Tensorflow/EDA%20%2B%20EfficientNet.ipynb)|     
 
 
 
