@@ -26,4 +26,7 @@ This is a project on Kaggle for detecting Cassava Leaf disease. I have implement
 
 
 
-
+# References
+- M. Tan and Q. V. Le, " EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks",  	arXiv:1905.11946, 2019
+-
+-
