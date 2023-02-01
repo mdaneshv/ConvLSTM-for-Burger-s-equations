@@ -5,18 +5,18 @@ This repository contains data science projects on deep learning and machine lear
 
 - ## First Topic (Data Driven Prediction of Dynamical Systems)
 
-I have exploited ConvLSTM neural networks to predict solution of Inviscid Burgers equation.
+I have exploited ConvLSTM neural networks to predict solution of Inviscid Burgers equation. Click the link below for more details.
 
 
 - ## Second Topic (Convolutional Neural Networks with TensorFlow)
 
-This is a tutorial project to show how to use TensorFlow to load data and build simple models to predict the data
+This is a tutorial project to show how to use TensorFlow to load data and build simple models to predict the data. Click the link below for more details.
 
 - ## Third Topic (Deep Convolutional Neural Networks: EfficientNet)
 
-This is a project on Kaggle for detecting Cassava Leaf disease. I have implemented Efficientnet with TensorFlow which is a prtrained Deep-CNN.
+This is a project on Kaggle for detecting Cassava Leaf disease. I have implemented Efficientnet with TensorFlow which is a prtrained Deep-CNN.  Click the link below for more details.
 
-    
+# Topics    
 ||Topics|
 |:-----|:--------|
 |:spades:|[Data Driven Prediction of Dynamical Systems](https://github.com/mdaneshv/DataScience/blob/master/Deep%20Learning%20Project/README.md)|        
