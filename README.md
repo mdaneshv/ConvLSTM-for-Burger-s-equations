@@ -2,6 +2,20 @@
 # Introduction
 
 This repository contains data science projects on deep learning and machine learning. Codes are written in `Python`.   
+
+- ## First Topic (Data Driven Prediction of Dynamical Systems)
+
+I have exploited ConvLSTM neural networks to predict solution of Inviscid Burgers equation.
+
+
+- ## Second Topic (Convolutional Neural Networks with TensorFlow)
+
+This is a tutorial project to show how to use TensorFlow to load data and build simple models to predict the data
+
+- ## Third Topic (Deep Convolutional Neural Networks: EfficientNet)
+
+This is a project on Kaggle for detecting Cassava Leaf disease. I have implemented Efficientnet with TensorFlow which is a prtrained Deep-CNN.
+
     
 ||Topics|
 |:-----|:--------|
