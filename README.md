@@ -27,8 +27,8 @@ This is a project on Kaggle for detecting Cassava Leaf disease. I have implement
 
 
 # References
-- M. Tan and Q. V. Le, " EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks",  	arXiv:1905.11946, 2019
-- U. Achatz, S. I. Dolaptchiev, I. Timofeyev, " Subgrid-scale closure for the inviscid Burgers-Hopf equation", Communications in Mathematical Sciences, 2013
-- A. Chattopadhyay, P. Hassanzadeh, and D. Subramanian, "Data-driven prediction of a multi-scale Lorenz 96 chaotic system
+- M. Tan and Q. V. Le, "*EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks*",  	arXiv:1905.11946, 2019
+- U. Achatz, S. I. Dolaptchiev, I. Timofeyev, "*Subgrid-scale closure for the inviscid Burgers-Hopf equation*", Communications in Mathematical Sciences, 2013
+- A. Chattopadhyay, P. Hassanzadeh, and D. Subramanian, "*Data-driven prediction of a multi-scale Lorenz 96 chaotic system
 using deep learning methods: Reservoir computing, ANN, and
-RNN-LSTM", Nonlinear Processes in Geophysics, 2020
+RNN-LSTM*", Nonlinear Processes in Geophysics, 2020
