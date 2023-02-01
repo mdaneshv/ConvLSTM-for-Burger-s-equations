@@ -28,5 +28,5 @@ This is a project on Kaggle for detecting Cassava Leaf disease. I have implement
 
 # References
 - M. Tan and Q. V. Le, " EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks",  	arXiv:1905.11946, 2019
--
--
+- U. Achatz, S. I. Dolaptchiev, I. Timofeyev, " Subgrid-scale closure for the inviscid Burgers-Hopf equation", Communications in Mathematical Sciences, 2013
+- 
