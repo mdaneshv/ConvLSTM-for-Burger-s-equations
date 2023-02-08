@@ -21,8 +21,8 @@ This is a project on Kaggle for detecting Cassava Leaf disease. I have implement
 ||Topics|
 |:-----|:--------|
 |:green_square:|[Data Driven Prediction of Dynamical Systems](https://github.com/mdaneshv/DataScience/blob/master/Deep%20Learning%20Project/README.md)|        
-|:orange_square:|[Convolutional Neural Networks with TensorFlow](https://github.com/mdaneshv/DataScience/blob/master/Tensorflow/CNN.ipynb)|    
-|:blue_square:|[ Image Classification with Very Deep Convolutional Neural Networks](https://github.com/mdaneshv/DataScience/blob/master/Tensorflow/EDA%20%2B%20EfficientNet.ipynb)|     
+|:orange_square:|[Convolutional Neural Networks with TensorFlow](https://github.com/mdaneshv/DataScience/blob/master/Tensorflow/Fashion-MNIST.ipynb)|    
+|:blue_square:|[ Image Classification with Very Deep Convolutional Neural Networks](https://github.com/mdaneshv/DataScience/blob/master/Tensorflow/Cassava-Leaf-Disease.ipynb)|     
 
 
 
