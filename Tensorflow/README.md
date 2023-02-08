@@ -1,4 +1,4 @@
-### Cassava Leaf Disease Classification :four_leaf_clover:
+### Cassava Leaf Disease Classification
 
 - Objective: Classification of the type of disease in the cassava plant
 
