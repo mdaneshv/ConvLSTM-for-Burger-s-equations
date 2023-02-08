@@ -1,7 +1,7 @@
 
 # Introduction
 
-This repository contains data science projects for time-series forecasting and image classification. Codes are written in `Python`.  
+This repository contains projects for time-series forecasting and image classification. Codes are written in `Python`.  
 
 
 - ## :green_book: First Topic: Data Driven Prediction of Dynamical Systems
