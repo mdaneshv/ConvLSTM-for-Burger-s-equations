@@ -1,0 +1,356 @@
+---
+title: "Statistical Data Analysis with R"
+output: html_notebook
+---
+
+We want to analyze smart device usage data in order to gain insight into how consumers use non-Bellabeat smart
+devices. 
+
+We attempt to answer the following questions in this study.
+
+1. What are some usage patterns for smart devices?
+2. How may Bellabeat customers be influenced by these trends?
+3. How can these developments affect Bellabeat's marketing plan?
+
+
+
+The dataset includes minute-level output for heart rate, physical activity, and sleep monitoring from $33$ Fitbit users who gave their consent to share their personal tracker data. 
+The dataset contains data on heart rate, steps taken, and daily activity that can be used to examine users' routines.
+
+Each of the $18$ csv files in the dataset contains consumer information. The long formart is used to store data. The data was collected on an hourly, weekly, and monthly basis.
+
+***The ROCCC parameters***:
+
+**Is data Reliable**? Since only $33$ users data were collected, the data source is unreliable, because it only represents part of the population. Therefore, the outcomes are subject to bias.
+
+**Is data Original**? Data is obtained from a survey on Amazon Mechanical Turk, and hence it cannot be considered original, because they are second or third-party data.
+
+**Is data Comprehensive**? There is some essential missing information about the users, such as age, gender, and height. This lack of information could lead to less accurate conclusions.
+
+**Is data Current**? Data is from $2016$, and therefore, not up-to-date.
+
+**Is data Cited**? Data is not cited. Only the name of the survey appears.
+
+There are only $33$ users in the data set, and these users consented to share their data. However, this volunteer sampling is subject to bias because only those comfortable sharing their data have done so. Therefore, this dataset needs to represent better the population that Bellabeat aims to target.
+
+<font size="5">  **Loading Libraries and Datasets 🚛 🚜 **</font>
+
+```{r message=FALSE, warning=FALSE}
+# Load required libraries
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+library(readr)
+library(Hmisc)
+library(janitor)
+library(hrbrthemes)
+library(corrplot)
+library(correlation)
+library(gridExtra)
+library(reshape)
+```
+
+```{r}
+# Create a directory path
+dir_path <- 'Fitabase Data 4.12.16-5.12.16/'
+
+# Load datasets
+daily_data <- read_csv(paste0(dir_path,'dailyActivity_merged.csv'), show_col_types=FALSE)
+sleep_data <- read_csv(paste0(dir_path,'sleepDay_merged.csv'), show_col_types=FALSE)
+weight_data <- read_csv(paste0(dir_path,'weightLogInfo_merged.csv'), show_col_types=FALSE)
+```
+```{r paged.print=TRUE}
+glimpse(daily_data)
+```
+```{r}
+glimpse(sleep_data)
+```
+
+```{r}
+glimpse(weight_data)
+```
+<font size="5">  **Some Cleaning 🧽 🧼 🧹 **</font>
+```{r}
+# Clean column names
+daily_data <- clean_names(daily_data)
+sleep_data <- clean_names(sleep_data)
+weight_data <- clean_names(weight_data)
+```
+```{r}
+# Change the character type to date or data/time data
+daily_data$activity_date <- mdy(daily_data$activity_date)
+sleep_data$sleep_day <- mdy_hms(sleep_data$sleep_day)
+weight_data$date <- mdy_hms(weight_data$date)
+```
+
+```{r}
+# Find duplicated rows
+sleep_data[duplicated(sleep_data),]
+```
+
+```{r}
+# Remove duplicated rows
+sleep_data <- sleep_data[!duplicated(sleep_data), ]
+```
+
+We check for missing values in data frames. The result is shown below.
+
+```{r echo=FALSE}
+# Check for missing values
+cat('daily_data includes NA values:', any(is.na(daily_data)==TRUE), '\n')
+cat('weight_data includes NA values:', any(is.na(weight_data)==TRUE), '\n')
+cat('sleep_data includes NA values:', any(is.na(sleep_data)==TRUE))
+```
+Weight data contains missing values. We can look at the percentage of the missing values in each column of this data frame using the *colSums* function.
+
+```{r}
+colSums(is.na(weight_data))/nrow(weight_data)
+```
+About $97\%$ of data in the *fat* column are missing. We can remove this feature from the weight data frame.
+```{r}
+# Remove the "fat" column from weight_data
+weight_data <- weight_data %>% select(-fat)
+```
+
+<font size="5"> **Some Data Analysis 📊 📈  **</font> 
+```{r echo=FALSE}
+cat('number of users who shared their daily activity =', length(unique(daily_data$id)), '\n')
+cat('number of users who shared their sleep activity =', length(unique(sleep_data$id)), '\n')
+cat('number of users who shared their weight data =',length(unique(weight_data$id)))
+```
+```{r}
+# Create a function for plot size
+plot_size <- function(width, height, ...){
+    options(repr.plot.width = width, repr.plot.height = height)
+}
+
+#  Customize hist() function to change colors
+hist.data.frame <- function(x, ..., colors = rainbow(ncol(x))) {
+  col <- 1
+  hist <- function(...) {
+    graphics::hist(..., col = colors[col])
+    col <<- col + 1
+  }
+  f <- Hmisc:::hist.data.frame
+  environment(f) <- environment()
+  f(x, ...)
+}
+```
+
+
+<font size="4"> **Daily Data**</font>
+```{r, fig.width=15, fig.height=10}
+plot_size(15,10)
+hist(daily_data[,-c(1,2)])
+```
+
+
+
+<font size="4"> **Sleep Data**</font>
+```{r}
+plot_size(15,10)
+hist(sleep_data[,-c(1,2)])
+```
+
+
+
+
+<font size="4"> **Weight Data**</font>
+```{r}
+plot_size(12,10)
+hist(weight_data[,-c(1,2)])
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+attach(daily_data)
+attach(sleep_data)
+attach(weight_data)
+```
+
+```{r echo=TRUE, fig.height=5, fig.width=12}
+plot_size(15,10)
+par(mfrow=c(1,2))
+qqnorm(total_distance, main='Q-Q plot for total_distance vs normal distribution')
+qqline(total_distance, col=4)
+qqnorm(total_minutes_asleep, main='Q-Q plot for total_minutes_asleep vs normal distribution')
+qqline(total_minutes_asleep, col=4)
+```
+```{r}
+# Calculate the best estimate for the population mean 
+t.test(total_distance, mu=5, conf.level=.99)
+t.test(calories, mu=2000, conf.level=.99)
+t.test(total_minutes_asleep, mu=410, conf.level=.99)
+t.test(weight_kg, alternative='greater', mu=70, conf.level=.99)
+```
+From the histograms, it looks like that total_distance and tracker_distance are very similar. We inspect this in the next block.
+
+```{r}
+# Inspect with visualization
+plot_size(12,10)
+ggplot(daily_data) + 
+geom_point(aes(x=total_distance, y=tracker_distance)) + 
+labs(x='Total Distance', y='Tracker Distance') +
+ggtitle("Scatter plot: total_distance vs tracker_distance") +
+theme_bw() +
+theme(axis.title.x = element_text(size = 15, face = "bold", color='black', hjust = 0.5),
+      axis.title.y = element_text(size = 15, face = "bold", color='black', hjust = 0.5),
+      plot.title = element_text(size=20, face='bold', color='purple', hjust=0.5))
+```
+
+Possible explanation:
+
+The total distance is the actual distance, and the smart tracker calculates the tracker distance. It seems that the tracker almost perfectly calculates the total distance. However, in a few cases, the tracker distance is less than the actual distance. One reason is the user was not wearing the tracker, or the tracker did not capture the user's activity for some reason due to the user's location, etc. 
+
+Push notifications and reminders might be helpful to remind users to wear the tracker properly.
+
+```{r}
+df <- daily_data %>%
+select(id, activity_date,total_distance) %>%
+group_by(id) %>%
+summarise(num_days=n_distinct(activity_date),
+          average_distance=mean(total_distance))
+
+head(df)
+summary(df)
+```
+```{r}
+# Create a probability histogram
+plot_size(10,7)
+ggplot(df) + 
+geom_histogram(aes(x=num_days, y=after_stat(count/sum(count))), color='darkgreen', bins=30) +
+labs(x='Number of days used', y='Fraction of users') +
+ggtitle("Fraction of users used the app for given number of days" ) +
+theme_bw() +
+theme(axis.title.x = element_text(size = 15, face = "bold", color='black', hjust = 0.5),
+      axis.title.y = element_text(size = 15, face = "bold", color='black', hjust = 0.5),
+      plot.title = element_text(size=18, face='bold', color='purple', hjust=0.5))
+```
+Most users have been using the app for the entire month. There are certain users, though, who stopped their participation after a specific day, so no data from their activity is available. It's important to keep users motivated.
+
+
+
+```{r fig.height=10, fig.width=12, message=FALSE, warning=FALSE}
+# min_max function to rescale columns for better comparison
+min_max <- function(x){
+  (x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+}
+
+# Check the relation of the columns
+plot_size(25,15)
+ggplot(daily_data, aes(x = activity_date, y = min_max(total_distance), col = 'total_distance')) +
+geom_point() +
+geom_smooth(se = FALSE, method = 'loess', formula = y ~ x) +
+geom_point(aes(y = min_max(very_active_distance), col = 'very_active_distance')) +
+geom_smooth(aes(y = min_max(very_active_distance), col = 'very_active_distance'), se = FALSE, method = 'lm', formula = y ~ x) +
+geom_point(aes(y = min_max(very_active_minutes), col = 'very_active_minute')) +
+geom_smooth(aes(y = min_max(very_active_minutes), col = 'very_active_minute'), se = FALSE, method = 'loess', formula = y ~ x) +
+geom_point(aes(y = min_max(calories), col = 'calories')) +
+geom_smooth(aes(y = min_max(calories), col = 'calories'), se = FALSE, method = 'loess', formula = y ~ x) +
+guides(color = guide_legend(override.aes = list(size = 10))) +
+facet_wrap(~id) +
+labs(x = 'date', y = 'rescaled values') +
+theme_bw() +
+theme(axis.title.x = element_text(size = 20, face = "bold", color='black', hjust = 0.5),
+      axis.title.y = element_text(size = 20, face = "bold", color='black', hjust = 0.5))
+```
+The plots show a clear relation between total distance (green curve) and calories (red curve) data for all users separately. Moreover, very_active distance and very_active minutes also follow the same trend.
+
+A few users show unusual activities as they have decided to run for much longer (or less) distances on a specific day. However, they mainly show consistent running through the month (less variation in data).
+
+```{r fig.height=10, fig.width=20, message=FALSE, warning=FALSE}
+ids <- unique(daily_data$id)
+
+lists = list()
+for (i in seq_along(ids)) {
+    lists[[i]] <- daily_data %>%
+    select(id, total_distance) %>%
+    filter(id==ids[i]) %>%
+    select(total_distance)
+}
+
+df <- data.frame(matrix(unlist(lists), ncol = length(lists)))
+colnames(df) <- ids
+df <- melt(df)
+
+plot_size(30,12)
+ggplot(df, aes(x=variable, y=value, color=variable)) + 
+geom_boxplot() + 
+ggtitle("Boxplots of all users for total distance") +
+xlab("Id") +
+ylab("Total Distance") +
+ theme(panel.background = element_rect(fill = "white", colour = "black",
+                                       size = 0.5, linetype = "solid"))+
+theme(
+    plot.title = element_text(face = "bold", size = 25, color='purple', hjust = 0.5),
+    axis.title.x = element_text(face = "bold", size = 20, color = "black", hjust=0.5),
+    axis.title.y = element_text(face = "bold", size = 20, color = "black", hjust=0.5)
+  )
+```
+
+```{r fig.height=8, fig.width=8}
+# Create a correlation plot
+plot_size(15,12)
+corr_matrix <- cor(daily_data[,-c(1,2)], method='spearman')
+corrplot(corr_matrix, method='number')
+```
+
+```{r}
+# Create a function for scatterplot and fitting curves
+simple_ggplot <- function(data, col1, col2){
+    ggplot(data) + 
+    geom_point(aes_string(x=col1, y=col2),col='darkgreen') + 
+    geom_smooth(aes_string(x=col1, y=col2), col='orange', formula=y~x, method="loess") +
+    xlab(col1) +
+    ylab(col2) +
+    theme_bw() +
+    theme(axis.title.x = element_text(face = "bold", size = 16, color = "black"),
+          axis.title.y = element_text(face = "bold", size = 16, color = "black")
+         )
+}
+```
+
+```{r}
+detach("package:reshape", unload=TRUE)
+
+# Rename date columns to a common name
+daily_data <- rename(daily_data, day = activity_date)
+sleep_data <- rename(sleep_data, day = sleep_day)
+
+# Inner join two dataframes 
+daily_sleep_merged <- merge(daily_data, sleep_data, by=c('id', 'day'))
+```
+
+```{r fig.height=5, fig.width=12}
+plot_size(25,8)
+p1 <- ggplot(daily_sleep_merged) + 
+geom_point(aes(x=day, y=total_distance, color=as.factor(total_sleep_records))) +
+theme_ft_rc() +
+theme(axis.title.x = element_text(size = 15, face = "bold", color='white', hjust = 0.5),
+      axis.title.y = element_text(size = 15, face = "bold", color='white', hjust = 0.5))
+
+p2 <- ggplot(daily_sleep_merged) + 
+geom_point(aes(x=total_distance, y=total_minutes_asleep, color=as.factor(total_sleep_records))) +
+geom_smooth(aes(x=total_distance, y=total_minutes_asleep), color='orange', method = 'loess', formula = 'y ~ x') +
+theme_ft_rc() +
+theme(axis.title.x = element_text(size = 15, face = "bold", color='white', hjust = 0.5),
+      axis.title.y = element_text(size = 15, face = "bold", color='white', hjust = 0.5))
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
+
+```{r}
+# Create a column for total minutes not sleeping while in bed
+daily_sleep_merged$total_minutes_not_asleep = daily_sleep_merged$total_time_in_bed - daily_sleep_merged$total_minutes_asleep
+
+# Check the relation between total_distance and total minutes users couldn't sleep in bed
+plot_size(12,8)
+ggplot(daily_sleep_merged) + 
+geom_point(aes(x=total_distance, y=total_minutes_not_asleep, color=as.factor(total_sleep_records))) +
+geom_smooth(aes(x=total_distance, y=total_minutes_not_asleep), color='white', method = 'loess', formula = 'y ~ x') +
+theme_ft_rc() +
+theme(axis.title.x = element_text(size = 15, face = "bold", color='white', hjust = 0.5),
+      axis.title.y = element_text(size = 15, face = "bold", color='white', hjust = 0.5))
+i
+```
+
